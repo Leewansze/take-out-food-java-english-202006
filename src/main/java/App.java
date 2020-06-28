@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.List;
 
 /*
@@ -14,7 +15,67 @@ public class App {
 
     public String bestCharge(List<String> inputs) {
         //TODO: write code here
+        List<Item> allItems = itemRepository.findAll();
+        List<SalesPromotion> Sales_Promotion = salesPromotionRepository.findAll(); // ÕÛ¿Û¼¯ºÏ
+        List<String> discountList = new ArrayList<>();
+        discountList.add("============= Order details =============");
+        int totalDiscountPrice = 0;
+        for(int i = 0; i < inputs.size(); i++){
+            String[] orderItem = inputs.get(i).split(" x ");
+            String itemId = orderItem[0];
+            int orderNumber = Integer.parseInt(orderItem[1]);
+            for (Item item : allItems) {
+                if (item.getId().equals(itemId)) {
+                    int amount = (int) item.getPrice() * orderNumber;
+                    discountList.add(item.getName() + " x " + orderNumber + " = " + amount + " yuan");
+                    totalDiscountPrice += amount;
 
-        return null;
+                }
+            }
+        }
+        if(totalDiscountPrice >= 30){
+            discountList.add("-----------------------------------");
+            discountList.add("Promotion used:");
+            discountList.add("Âú30¼õ6 yuan" + "£¬saving " + (totalDiscountPrice / 30)*6 + " yuan");
+            totalDiscountPrice -= (totalDiscountPrice / 30)*6;
+        }
+        discountList.add("-----------------------------------");
+        discountList.add("Total£º" + totalDiscountPrice + " yuan");
+        discountList.add("===================================");
+
+        int totalHalfPrice = 0;
+        int halfPrice = 0;
+        List<String> halfList = new ArrayList<>();
+        List<String> discountItems = new ArrayList<>();
+        halfList.add("============= Order details =============");
+        for(int i = 0; i < inputs.size(); i++){
+            String[] orderItem = inputs.get(i).split(" x ");
+            String itemId = orderItem[0];
+            int orderNumber = Integer.parseInt(orderItem[1]);
+            String currentName = null;
+            int currentPrice = 0;
+            for (Item item : allItems) {
+                if (item.getId().equals(itemId)) {
+                    currentName = item.getName();
+                    currentPrice = (int)item.getPrice();
+                    int amount = currentPrice * orderNumber;
+                    halfList.add(item.getName() + " x " + orderNumber + " = " + amount + " yuan");
+                    totalHalfPrice += amount;
+
+                }
+            }
+            if(Sales_Promotion.get(1).getRelatedItems().contains(itemId) && currentName != null){
+                totalHalfPrice -= currentPrice * orderNumber / 2;
+                halfPrice += currentPrice * orderNumber / 2;
+                discountItems.add(currentName);
+            }
+        }
+        halfList.add("-----------------------------------");
+        halfList.add("Promotion used:");
+        halfList.add(Sales_Promotion.get(1).getDisplayName() + " (" + String.join("£¬", discountItems) + ")" + "£¬saving " + halfPrice + " yuan");
+        halfList.add("-----------------------------------");
+        halfList.add("Total£º" + totalHalfPrice + " yuan");
+        halfList.add("===================================");
+        return String.join("\n", totalHalfPrice < totalDiscountPrice ? halfList : discountList);
     }
 }
